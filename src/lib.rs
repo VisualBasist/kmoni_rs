@@ -29,6 +29,7 @@ struct LatestDataTimeResponse {
 }
 
 /*
+calcintensityは5弱とかにもなる
 {
     "result": {
         "status": "success",
@@ -89,8 +90,7 @@ pub struct EEW {
     longitude: f64,
     is_cancel: bool,
     depth: f64,
-    // u32?
-    calcintensity: f64,
+    calcintensity: String,
     is_final: bool,
     is_training: bool,
     latitude: f64,
