@@ -19,6 +19,12 @@ time::serde::format_description!(
     "[year]/[month]/[day] [hour]:[minute]:[second]"
 );
 
+time::serde::format_description!(
+    nospace_date,
+    PrimitiveDateTime,
+    "[year][month][day][hour][minute][second]"
+);
+
 #[derive(Deserialize, Debug)]
 struct LatestDataTimeResponse {
     #[serde(with = "slash_separated_date")]
@@ -60,32 +66,13 @@ calcintensityは5弱とかにもなる
 }
  */
 #[derive(Deserialize, Debug)]
-struct EEWRawResponse {
-    result: ResultRawResponse,
-    report_time: String,
-    region_code: String,
-    request_time: String,
-    region_name: String,
-    longitude: String,
-    is_cancel: String,
-    depth: String,
-    calcintensity: String,
-    is_final: String,
-    is_training: String,
-    latitude: String,
-    origin_time: String,
-    magunitude: String,
-    report_num: String,
-    request_hypo_type: String,
-    report_id: String,
-}
-
-#[derive(Debug)]
 pub struct EEW {
-    // result: ResultRawResponse,
-    report_time: OffsetDateTime,
+    result: ResultRawResponse,
+    #[serde(with = "slash_separated_date")]
+    report_time: PrimitiveDateTime,
     region_code: String,
-    request_time: OffsetDateTime,
+    #[serde(with = "nospace_date")]
+    request_time: PrimitiveDateTime,
     region_name: String,
     longitude: f64,
     is_cancel: bool,
@@ -94,7 +81,8 @@ pub struct EEW {
     is_final: bool,
     is_training: bool,
     latitude: f64,
-    origin_time: OffsetDateTime,
+    #[serde(with = "nospace_date")]
+    origin_time: PrimitiveDateTime,
     magunitude: f64,
     report_num: u32,
     request_hypo_type: String,
@@ -117,13 +105,13 @@ impl KMoniClient {
         }
     }
 
-    pub fn fetch() {
+    pub fn fetch(&self) {
         // TODO: async
         let response = reqwest::blocking::get(
-            "http://www.kmoni.bosai.go.jp/webservice/hypo/eew/20230519003106.json",
+            "http://www.kmoni.bosai.go.jp/webservice/hypo/eew/20230522002841.json",
         )
         .unwrap()
-        .json::<EEWRawResponse>()
+        .json::<EEW>()
         .unwrap();
     }
 }

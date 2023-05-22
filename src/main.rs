@@ -1,4 +1,5 @@
 fn main() {
     let client = kmoni::KMoniClient::new();
-    println!("{client:?}");
+    let res = client.fetch();
+    println!("{:?}", res);
 }
