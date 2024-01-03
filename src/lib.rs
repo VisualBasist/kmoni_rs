@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use time::{macros::offset, Duration, OffsetDateTime, PrimitiveDateTime};
 
 #[derive(Debug)]
@@ -24,6 +24,22 @@ time::serde::format_description!(
     PrimitiveDateTime,
     "[year][month][day][hour][minute][second]"
 );
+
+fn deserialize_string_f64<'de, D>(deserializer: D) -> Result<f64, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Ok(s.parse().unwrap())
+}
+
+fn deserialize_string_u32<'de, D>(deserializer: D) -> Result<u32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Ok(s.parse().unwrap())
+}
 
 #[derive(Deserialize, Debug)]
 struct LatestDataTimeResponse {
@@ -101,16 +117,21 @@ pub struct EEW {
     #[serde(with = "nospace_date")]
     request_time: PrimitiveDateTime,
     region_name: String,
+    #[serde(deserialize_with = "deserialize_string_f64")]
     longitude: f64,
     is_cancel: bool,
-    depth: f64,
+    // TODO: depth: f64,
+    depth: String,
     calcintensity: String,
     is_final: bool,
     is_training: bool,
+    #[serde(deserialize_with = "deserialize_string_f64")]
     latitude: f64,
     #[serde(with = "nospace_date")]
     origin_time: PrimitiveDateTime,
+    #[serde(deserialize_with = "deserialize_string_f64")]
     magunitude: f64,
+    #[serde(deserialize_with = "deserialize_string_u32")]
     report_num: u32,
     request_hypo_type: String,
     report_id: String,
@@ -148,7 +169,37 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        assert_eq!(42, 42);
+    fn parse_succeeded() {
+        serde_json::from_str::<EEW>(
+            r#"{
+                "result": {
+                    "status": "success",
+                    "message": "",
+                    "is_auth": true
+                },
+                "report_time": "2023/05/21 16:03:57",
+                "region_code": "",
+                "request_time": "20230521160357",
+                "region_name": "福島県沖",
+                "longitude": "141.5",
+                "is_cancel": false,
+                "depth": "20km",
+                "calcintensity": "2",
+                "is_final": false,
+                "is_training": false,
+                "latitude": "37.2",
+                "origin_time": "20230521160321",
+                "security": {
+                    "realm": "/kyoshin_monitor/static/jsondata/eew_est/",
+                    "hash": "b61e4d95a8c42e004665825c098a6de4"
+                },
+                "magunitude": "3.5",
+                "report_num": "2",
+                "request_hypo_type": "eew",
+                "report_id": "20230521160327",
+                "alertflg": "予報"
+            }"#,
+        )
+        .unwrap();
     }
 }
