@@ -1,5 +1,8 @@
 use serde::{Deserialize, Deserializer};
-use time::{macros::offset, Duration, OffsetDateTime, PrimitiveDateTime};
+use time::{
+    macros::{format_description, offset},
+    Duration, OffsetDateTime, PrimitiveDateTime,
+};
 
 #[derive(Debug)]
 pub struct KMoniClient {
@@ -154,14 +157,17 @@ impl KMoniClient {
         }
     }
 
-    pub fn fetch(&self) {
+    pub fn fetch(&self) -> EEW {
         // TODO: async
-        let response = reqwest::blocking::get(
-            "http://www.kmoni.bosai.go.jp/webservice/hypo/eew/20230522002841.json",
+        reqwest::blocking::get((OffsetDateTime::now_utc() - self.delay).to_offset(offset!(+9))
+                .format(format_description!(
+                    "http://www.kmoni.bosai.go.jp/webservice/hypo/eew/[year][month][day][hour][minute][second].json"
+                ))
+                .unwrap()
         )
         .unwrap()
         .json::<EEW>()
-        .unwrap();
+        .unwrap()
     }
 }
 
