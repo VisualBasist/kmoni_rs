@@ -13,6 +13,7 @@ struct ResultRawResponse {
     message: String,
 }
 
+// TODO: OffsetDataTimeを使う
 time::serde::format_description!(
     slash_separated_date,
     PrimitiveDateTime,
