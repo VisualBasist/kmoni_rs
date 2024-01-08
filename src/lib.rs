@@ -9,7 +9,7 @@ pub struct KMoniClient {
     delay: Duration,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq, Eq)]
 struct ResultRawResponse {
     // TODO: enumにしたい
     status: String,
@@ -45,7 +45,7 @@ where
     Ok(s.parse().unwrap())
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq, Eq)]
 struct LatestDataTimeResponse {
     #[serde(with = "slash_separated_date")]
     latest_time: PrimitiveDateTime,
@@ -54,12 +54,12 @@ struct LatestDataTimeResponse {
     result: ResultRawResponse,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, PartialEq, Eq)]
 pub struct EEWOnlyResult {
     result: ResultRawResponse,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq)]
 pub struct EEW {
     result: ResultRawResponse,
     #[serde(with = "slash_separated_date")]
@@ -128,12 +128,37 @@ impl KMoniClient {
 
 #[cfg(test)]
 mod tests {
+    use time::macros::datetime;
+
     use super::*;
 
     #[test]
     fn parse_succeeded() {
-        serde_json::from_str::<EEW>(
-            r#"{
+        assert_eq!(
+            Some(EEW {
+                result: ResultRawResponse {
+                    status: "success".to_string(),
+                    message: "".to_string()
+                },
+                report_time: datetime!(2023-05-21 16:03:57),
+                region_code: "".to_string(),
+                request_time: datetime!(2023-05-21 16:03:57),
+                region_name: "福島県沖".to_string(),
+                longitude: 141.5,
+                is_cancel: false,
+                depth: "20km".to_string(),
+                calcintensity: "2".to_string(),
+                is_final: false,
+                is_training: false,
+                latitude: 37.2,
+                origin_time: datetime!(2023-05-21 16:03:21),
+                magunitude: 3.5,
+                report_num: 2,
+                request_hypo_type: "eew".to_string(),
+                report_id: "20230521160327".to_string()
+            }),
+            KMoniClient::parse_eew(
+                r#"{
                 "result": {
                     "status": "success",
                     "message": "",
@@ -161,14 +186,17 @@ mod tests {
                 "report_id": "20230521160327",
                 "alertflg": "予報"
             }"#,
-        )
-        .unwrap();
+            )
+            .unwrap()
+        );
     }
 
     #[test]
     fn nodata() {
-        serde_json::from_str::<EEW>(
-            r#"{
+        assert_eq!(
+            None,
+            KMoniClient::parse_eew(
+                r#"{
     "result": {
         "status": "success",
         "message": "データがありません",
@@ -195,7 +223,8 @@ mod tests {
     "request_hypo_type": "eew",
     "report_id": ""
 }"#,
-        )
-        .unwrap();
+            )
+            .unwrap()
+        );
     }
 }
