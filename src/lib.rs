@@ -54,6 +54,11 @@ struct LatestDataTimeResponse {
     result: ResultRawResponse,
 }
 
+#[derive(Deserialize)]
+pub struct EEWOnlyResult {
+    result: ResultRawResponse,
+}
+
 #[derive(Deserialize, Debug)]
 pub struct EEW {
     result: ResultRawResponse,
@@ -100,17 +105,26 @@ impl KMoniClient {
         }
     }
 
-    pub fn fetch(&self) -> EEW {
+    pub fn fetch(&self) -> Option<EEW> {
         // TODO: async
-        reqwest::blocking::get((OffsetDateTime::now_utc() - self.delay).to_offset(offset!(+9))
+        let json= reqwest::blocking::get((OffsetDateTime::now_utc() - self.delay).to_offset(offset!(+9))
                 .format(format_description!(
                     "http://www.kmoni.bosai.go.jp/webservice/hypo/eew/[year][month][day][hour][minute][second].json"
                 ))
                 .unwrap()
         )
-        .unwrap()
-        .json::<EEW>()
-        .unwrap()
+        .unwrap().text().unwrap();
+
+        if serde_json::from_str::<EEWOnlyResult>(&json)
+            .unwrap()
+            .result
+            .message
+            == "データがありません"
+        {
+            None
+        } else {
+            Some(serde_json::from_str::<EEW>(&json).unwrap())
+        }
     }
 }
 
