@@ -90,14 +90,14 @@ pub struct EEW {
 }
 
 impl KMoniClient {
-    pub fn new() -> KMoniClient {
-        // TODO: asyncにする?
-        let response = reqwest::blocking::get(
-            "http://www.kmoni.bosai.go.jp/webservice/server/pros/latest.json",
-        )
-        .unwrap()
-        .json::<LatestDataTimeResponse>()
-        .unwrap();
+    pub async fn new() -> KMoniClient {
+        let response =
+            reqwest::get("http://www.kmoni.bosai.go.jp/webservice/server/pros/latest.json")
+                .await
+                .unwrap()
+                .json::<LatestDataTimeResponse>()
+                .await
+                .unwrap();
 
         KMoniClient {
             delay: time::OffsetDateTime::now_utc()
@@ -105,15 +105,15 @@ impl KMoniClient {
         }
     }
 
-    pub fn fetch(&self) -> Option<EEW> {
-        // TODO: async
-        let json= reqwest::blocking::get((OffsetDateTime::now_utc() - self.delay).to_offset(offset!(+9))
+    pub async fn fetch(&self) -> Option<EEW> {
+        let json= reqwest::get((OffsetDateTime::now_utc() - self.delay).to_offset(offset!(+9))
                 .format(format_description!(
                     "http://www.kmoni.bosai.go.jp/webservice/hypo/eew/[year][month][day][hour][minute][second].json"
                 ))
                 .unwrap()
         )
-        .unwrap().text().unwrap();
+        .await
+        .unwrap().text().await.unwrap();
 
         if serde_json::from_str::<EEWOnlyResult>(&json)
             .unwrap()
