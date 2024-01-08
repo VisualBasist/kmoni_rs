@@ -106,24 +106,22 @@ impl KMoniClient {
     }
 
     pub async fn fetch(&self) -> Option<EEW> {
-        let json= reqwest::get((OffsetDateTime::now_utc() - self.delay).to_offset(offset!(+9))
+        KMoniClient::parse_eew(&reqwest::get((OffsetDateTime::now_utc() - self.delay).to_offset(offset!(+9))
                 .format(format_description!(
                     "http://www.kmoni.bosai.go.jp/webservice/hypo/eew/[year][month][day][hour][minute][second].json"
                 ))
                 .unwrap()
         )
         .await
-        .unwrap().text().await.unwrap();
+        .unwrap().text().await.unwrap()).unwrap()
+    }
 
-        if serde_json::from_str::<EEWOnlyResult>(&json)
-            .unwrap()
-            .result
-            .message
-            == "データがありません"
+    fn parse_eew(json: &str) -> serde_json::Result<Option<EEW>> {
+        if serde_json::from_str::<EEWOnlyResult>(&json)?.result.message == "データがありません"
         {
-            None
+            Ok(None)
         } else {
-            Some(serde_json::from_str::<EEW>(&json).unwrap())
+            Ok(Some(serde_json::from_str::<EEW>(&json)?))
         }
     }
 }
