@@ -45,6 +45,17 @@ where
     Ok(s.parse().unwrap())
 }
 
+fn deserialize_km_u32<'de, D>(deserializer: D) -> Result<u32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    s.strip_suffix("km")
+        .expect("深さの単位がkmじゃない")
+        .parse()
+        .map_err(serde::de::Error::custom)
+}
+
 #[derive(Deserialize, Debug, PartialEq, Eq)]
 struct LatestDataTimeResponse {
     #[serde(with = "slash_separated_date")]
@@ -71,8 +82,8 @@ pub struct EEW {
     #[serde(deserialize_with = "deserialize_string_f64")]
     longitude: f64,
     is_cancel: bool,
-    // TODO: depth: f64,
-    depth: String,
+    #[serde(deserialize_with = "deserialize_km_u32")]
+    depth: u32,
     // TODO: calcintensityは5弱とかにもなる
     calcintensity: String,
     is_final: bool,
@@ -146,7 +157,7 @@ mod tests {
                 region_name: "福島県沖".to_string(),
                 longitude: 141.5,
                 is_cancel: false,
-                depth: "20km".to_string(),
+                depth: 20,
                 calcintensity: "2".to_string(),
                 is_final: false,
                 is_training: false,
